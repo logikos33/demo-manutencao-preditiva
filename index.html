@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manutenção Preditiva</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --tx:#e8eaed; --mut:#9aa0a6; --ac:#3b82f6; --ln:#2d3340; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0 auto; background:var(--bg); color:var(--tx); font:15px/1.4 system-ui, sans-serif; padding:16px; max-width:640px; }
+  @media (min-width:960px) {
+    body { max-width:1240px; padding:24px; }
+    .layout { display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+    .saida { position:sticky; top:16px; }
+    .grid.g3 { grid-template-columns:repeat(3, 1fr); }
+    h1 { font-size:24px; }
+  }
+  footer { color:var(--mut); font-size:11px; margin-top:16px; }
+  footer a { color:var(--mut); }
+  h1 { font-size:20px; margin:4px 0 12px; }
+  h2 { font-size:14px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:0 0 6px; }
+  .card { background:var(--card); border-radius:12px; padding:14px; margin-bottom:12px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; }
+  label.f { display:block; font-size:12px; color:var(--mut); }
+  input { width:100%; padding:9px; border-radius:8px; border:1px solid var(--ln); background:var(--bg); color:var(--tx); font-size:15px; margin-top:3px; }
+  input[type=file] { display:none; }
+  .btn { display:block; width:100%; text-align:center; background:var(--ac); color:#fff; border:0; padding:14px; border-radius:10px; font:700 16px system-ui; cursor:pointer; }
+  .troca { display:block; text-align:center; font-size:12px; color:var(--ac); margin-top:4px; cursor:pointer; }
+  img, canvas { width:100%; border-radius:8px; display:block; background:#000; aspect-ratio:4/3; object-fit:cover; }
+  .mut { color:var(--mut); font-size:12px; margin:6px 0 0; }
+  #urg { font-size:22px; font-weight:800; text-align:center; padding:14px; border-radius:10px; color:#000; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  th, td { text-align:left; padding:7px 4px; border-bottom:1px solid var(--ln); vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  .tag { display:inline-block; padding:2px 7px; border-radius:6px; color:#000; font-weight:700; font-size:11px; white-space:nowrap; }
+  ul { padding-left:18px; margin:6px 0; }
+</style>
+</head>
+<body>
+<h1>Manutenção preditiva · Motor MB-03</h1>
+<main class="layout">
+<section>
+
+<div class="card">
+  <h2>1. Histórico</h2>
+  <div class="grid">
+    <label class="f">Data da última manutenção<input type="date" id="dataUlt" value="2026-06-15"></label>
+    <label class="f">Data da análise<input type="date" id="dataHoje" value="2026-11-11"></label>
+  </div>
+</div>
+
+<div class="card">
+  <h2>2. Imagens do ativo</h2>
+  <div class="grid">
+    <div><img id="iAtivo" src="img/ativo-motor.jpg" alt="Foto do ativo">
+      <label class="troca">Foto normal · trocar<input id="fAtivo" type="file" accept="image/*" capture="environment"></label></div>
+    <div><canvas id="cTermica"></canvas>
+      <label class="troca">Imagem térmica · trocar<input id="fTermica" type="file" accept="image/*"></label></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>3. Sensores (leitura atual)</h2>
+  <div class="grid g3">
+    <label class="f">Vibração RMS (mm/s)<input type="number" step="0.1" id="sVib" value="3.6"></label>
+    <label class="f">Temp. do rolamento (°C)<input type="number" id="sRol" value="74"></label>
+    <label class="f">Temp. carcaça na térmica (°C)<input type="number" id="sCar" value="56"></label>
+    <label class="f">Temp. carcaça na última inspeção (°C)<input type="number" id="sCarRef" value="44"></label>
+    <label class="f">Corrente média (A)<input type="number" step="0.1" id="sCor" value="23.9"></label>
+    <label class="f">Desbalanceamento de corrente (%)<input type="number" step="0.1" id="sDes" value="3"></label>
+    <label class="f">Horas desde a última lubrificação<input type="number" id="sLub" value="2650"></label>
+  </div>
+</div>
+
+<div class="card">
+  <h2>4. Dados do ativo (manual do fabricante)</h2>
+  <div class="grid g3">
+    <label class="f">Modelo<input id="mMod" value="Motor trifásico 15 kW · 4 polos"></label>
+    <label class="f">Rotação nominal (rpm)<input type="number" id="mRpm" value="1760"></label>
+    <label class="f">Corrente nominal (A)<input type="number" step="0.1" id="mCor" value="28.5"></label>
+    <label class="f">Temp. máx. do rolamento (°C)<input type="number" id="mRol" value="90"></label>
+    <label class="f">Vibração: limite zona C (mm/s)<input type="number" step="0.1" id="mVibC" value="2.8"></label>
+    <label class="f">Vibração: limite zona D (mm/s)<input type="number" step="0.1" id="mVibD" value="4.5"></label>
+    <label class="f">Intervalo de lubrificação (h)<input type="number" id="mLub" value="3000"></label>
+    <label class="f">Intervalo de manutenção (dias)<input type="number" id="mInt" value="180"></label>
+  </div>
+  <p class="mut">Vibração segundo a ISO 10816-3 (máquina de 15 a 300 kW, base rígida). Valores de exemplo.</p>
+</div>
+
+<button class="btn" id="btnAnalisar">Analisar</button>
+</section>
+
+<aside class="saida">
+<div class="card" id="vazio"><h2>Saída</h2><p class="mut">Toque em Analisar para ver os parâmetros de manutenção e o nível de urgência.</p></div>
+<div class="card" id="res" hidden style="margin-top:12px">
+  <div id="urg"></div>
+  <p id="prazo" style="text-align:center;margin:8px 0 0;font-weight:600"></p>
+  <table><thead><tr><th>Parâmetro</th><th>Medido</th><th>Limite</th><th>Status</th></tr></thead><tbody id="tab"></tbody></table>
+  <h2 style="margin-top:14px">Ações recomendadas</h2>
+  <ul id="acoes"></ul>
+  <p class="mut" id="causa"></p>
+</div>
+</aside>
+</main>
+<footer>Demo Logikos. Dados de exemplo. Imagens: Wikimedia Commons. Motor: <a href="https://commons.wikimedia.org/wiki/File:Industrial_Electric_Motor_and_Drive_Mechanism.jpg">LJamesCPH</a>, CC BY-SA 4.0. Térmica do motor: <a href="https://commons.wikimedia.org/wiki/File:Electric_motor_thermal_image.jpg">Zaereth</a>, CC0.</footer>
+
+<script>
+const NIVEIS = [
+  { nome: 'NORMAL', cor: '#2ecc71', dias: null },
+  { nome: 'ATENÇÃO', cor: '#f1c40f', dias: 30 },
+  { nome: 'ALERTA', cor: '#e67e22', dias: 7 },
+  { nome: 'CRÍTICO', cor: '#e74c3c', dias: 0 },
+];
+const DIA = 864e5, v = id => +document.getElementById(id).value;
+const data = id => new Date(document.getElementById(id).value + 'T00:00');
+const fmt = d => d.toLocaleDateString('pt-BR');
+const br = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
+// nível = quantos cortes [atenção, alerta, crítico] o valor atingiu
+const nivel = (x, cortes) => cortes.filter(c => x >= c).length;
+
+function analisar() {
+  const hoje = data('dataHoje'), ult = data('dataUlt');
+  const diasDesde = Math.round((hoje - ult) / DIA), dt = v('sCar') - v('sCarRef');
+  const pCor = 100 * v('sCor') / v('mCor');
+  const L = v('mRol'), Lub = v('mLub');
+  const params = [
+    { k: 'vib', nome: 'Vibração RMS', med: `${br(v('sVib'))} mm/s`, lim: `C ${br(v('mVibC'))} · D ${br(v('mVibD'))}`,
+      n: nivel(v('sVib'), [v('mVibC'), v('mVibD'), v('mVibD') * 1.6]), acao: 'Medir espectro de vibração. Verificar rolamento, alinhamento e fixação da base.' },
+    { k: 'rol', nome: 'Temp. rolamento', med: `${br(v('sRol'))} °C`, lim: `${br(L)} °C`,
+      n: nivel(v('sRol'), [.8 * L, .95 * L, L]), acao: 'Inspecionar rolamento e condição da graxa.' },
+    { k: 'car', nome: 'ΔT carcaça (térmica)', med: `+${br(dt)} °C`, lim: '10 / 20 / 40 °C',
+      n: nivel(dt, [10, 20, 40]), acao: 'Limpar aletas e ventilação. Conferir sobrecarga.' },
+    { k: 'cor', nome: 'Corrente', med: `${br(v('sCor'))} A (${br(pCor)}%)`, lim: `${br(v('mCor'))} A`,
+      n: nivel(pCor, [95, 100, 115]), acao: 'Verificar carga mecânica e tensão de alimentação.' },
+    { k: 'des', nome: 'Desbal. corrente', med: `${br(v('sDes'))}%`, lim: '5 / 8 / 10%',
+      n: nivel(v('sDes'), [5, 8, 10]), acao: 'Medir tensão nas três fases e reapertar conexões.' },
+    { k: 'lub', nome: 'Horas sem lubrificar', med: `${br(v('sLub'))} h`, lim: `${br(Lub)} h`,
+      n: nivel(v('sLub'), [.85 * Lub, Lub, 1.3 * Lub]), acao: 'Relubrificar conforme manual.' },
+    { k: 'pla', nome: 'Dias desde a manutenção', med: `${diasDesde} dias`, lim: `${v('mInt')} dias`,
+      n: 0, acao: '' }, // calendário é contexto, não degradação: entra na data, não no nível
+  ];
+
+  // nível geral = pior parâmetro; 3+ sinais em atenção juntos indicam degradação real → sobe para alerta
+  const degr = params.filter(p => p.n > 0);
+  let g = Math.max(...params.map(p => p.n));
+  if (g === 1 && degr.length >= 3) g = 2;
+  const N = NIVEIS[g];
+
+  const vencePlano = new Date(+ult + v('mInt') * DIA);
+  let proxima, prazo;
+  if (N.dias === null) {
+    proxima = hoje >= vencePlano ? new Date(+hoje + 30 * DIA) : vencePlano;
+    prazo = hoje >= vencePlano ? 'Plano vencido, mas o ativo está saudável: adiar a parada e reinspecionar.' : 'Manter o plano.';
+  } else {
+    proxima = new Date(Math.min(+vencePlano, +hoje + N.dias * DIA));
+    const ant = Math.round((vencePlano - proxima) / DIA);
+    prazo = ant > 0 ? `Antecipar ${ant} dias em relação ao plano (${fmt(vencePlano)}).` : 'Coincide com o plano.';
+  }
+
+  urg.textContent = `URGÊNCIA: ${N.nome}`; urg.style.background = N.cor;
+  document.getElementById('prazo').textContent = `Próxima intervenção: ${fmt(proxima)}. ${prazo}`;
+  tab.innerHTML = params.map(p => `<tr><td>${p.nome}</td><td>${p.med}</td><td>${p.lim}</td>
+    <td><span class="tag" style="background:${NIVEIS[p.n].cor}">${NIVEIS[p.n].nome}</span></td></tr>`).join('');
+  acoes.innerHTML = degr.sort((a, b) => b.n - a.n).map(p => `<li>${p.acao}</li>`).join('') || '<li>Nenhuma ação. Seguir monitorando.</li>';
+  const sinais = new Set(degr.map(p => p.k));
+  causa.textContent = sinais.has('vib') && (sinais.has('rol') || sinais.has('lub'))
+    ? 'Provável causa: início de desgaste no rolamento (vibração + temperatura do rolamento + lubrificação vencendo).' : '';
+  vazio.hidden = true; res.hidden = false; if (innerWidth < 960) res.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Marca o ponto mais quente: pixels mais claros da paleta, ignorando as bordas onde ficam escala e legenda
+function marcarQuente(img) {
+  const c = cTermica, ctx = c.getContext('2d', { willReadFrequently: true });
+  c.width = img.naturalWidth; c.height = img.naturalHeight; ctx.drawImage(img, 0, 0);
+  const { width: w, height: h } = c, d = ctx.getImageData(0, 0, w, h).data, px = [];
+  // ponytail: brilho como proxy de calor; serve para ironbow/rainbow, não para paletas invertidas
+  for (let y = h * .1 | 0; y < h * .85; y++) for (let x = w * .1 | 0; x < w * .8; x++) {
+    const i = (y * w + x) * 4; px.push([d[i] + d[i+1] + d[i+2], x, y]);
+  }
+  px.sort((a, b) => b[0] - a[0]);
+  const top = px.slice(0, Math.max(1, px.length * .005 | 0));
+  const cx = top.reduce((s, p) => s + p[1], 0) / top.length, cy = top.reduce((s, p) => s + p[2], 0) / top.length;
+  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = Math.max(2, w / 100);
+  ctx.beginPath(); ctx.arc(cx, cy, w / 9, 0, 7); ctx.stroke();
+}
+const carregaTermica = src => { const i = new Image(); i.onload = () => marcarQuente(i); i.src = src; };
+
+fAtivo.onchange = () => fAtivo.files[0] && (iAtivo.src = URL.createObjectURL(fAtivo.files[0]));
+fTermica.onchange = () => fTermica.files[0] && carregaTermica(URL.createObjectURL(fTermica.files[0]));
+btnAnalisar.onclick = analisar;
+carregaTermica('img/termica-motor.jpg');
+</script>
+</body>
+</html>
